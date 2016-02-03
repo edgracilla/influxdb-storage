@@ -1,0 +1,56 @@
+/* The config.json file is where you specify additional configuration needed by
+ * your plugin. The details you specify here will be translated to a form on the
+ * UI. The values supplied by the users will then get injected as options on the
+ * platform on ready event.
+ */
+{
+  "host": {
+	"label": "Host",
+	"type": "String",
+	"required": true,
+	"help": "Host(s) for the InfluxDB database."
+  },
+  "port": {
+	"label": "Port",
+	"type": "Number",
+	"required": false,
+	"help": "(Optional) Port for the InfluxDB database."
+  },
+  "connection_type": {
+	"label": "Connection Type",
+	"type": "String",
+	"required": true,
+	"enum" : ["http", "https"],
+	"help": "Type of URL Connection to be used."
+  },
+  "user" : {
+	"label": "User",
+	"type": "String",
+	"required": true,
+	"help": "User for authentication."
+  },
+  "password" : {
+	"label": "Password",
+	"type": "Password",
+	"required": false,
+	"help": "(Optional) Password for authentication."
+  },
+  "database" : {
+	"label": "Database Name",
+	"type": "String",
+	"required": true,
+	"help": "Database Name where the Series is located."
+  },
+  "series" : {
+	"label": "Series Name",
+	"type": "String",
+	"required": true,
+	"help": "Series Name where the data will be saved."
+  },
+  "tagKeys": {
+	"label": "Tag Keys",
+	"type": "String",
+	"required": false,
+	"help": "(Optional) Field name in the Data that will be used for the Tag keys values should be comma separated ie (tag1,tag2,tag3)."
+  }
+}
