@@ -12,9 +12,9 @@ var cp       = require('child_process'),
 	storage;
 
 
-var HOST 	        = 'gigawatt-calvinklein-42.c.influxdb.com',
+var HOST 	        = 'eightyeight-hoverboard-95.c.influxdb.com',
 	USER 	        = 'influxdb',
-	PASSWORD        = '5b956a12e730283f',
+	PASSWORD        = '951fa528144694ba',
 	PORT 	        = 8086,
 	CONNECTION_TYPE = 'https',
 	DATABASE        = 'reekoh_db',
@@ -37,13 +37,16 @@ var record = {
 describe('Storage', function () {
 	this.slow(5000);
 
-	after('terminate child process', function () {
+	after('terminate child process', function (done) {
+		this.timeout(5000);
+
 		storage.send({
 			type: 'close'
 		});
 
 		setTimeout(function () {
 			storage.kill('SIGKILL');
+			done();
 		}, 3000);
 	});
 
@@ -86,7 +89,10 @@ describe('Storage', function () {
 		it('should process the data', function (done) {
 			storage.send({
 				type: 'data',
-				data: record
+				data: [
+					record,
+					record
+				]
 			}, done);
 		});
 	});

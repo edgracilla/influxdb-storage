@@ -1,7 +1,7 @@
 {
   "name": "influxdb-storage",
   "description": "InfluxDB storage plugin for Reekoh IoT Platform",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Reekoh, Inc.",
   "main": "app.js",
   "scripts": {
@@ -12,7 +12,10 @@
     "url": "https://github.com/Reekoh/influxdb-storage"
   },
   "dependencies": {
+    "async": "^1.5.2",
     "influx": "^4.1.0",
+    "lodash.isarray": "^4.0.0",
+    "lodash.isplainobject": "^4.0.3",
     "moment": "^2.11.1"
   },
   "devDependencies": {
@@ -22,6 +25,7 @@
     "gulp-json-lint": "^0.1.0",
     "gulp-mocha": "^2.2.0",
     "gulp-plumber": "^1.0.1",
+    "jshint": "^2.9.1",
     "mocha": "^2.3.4",
     "should": "^8.2.1"
   },
