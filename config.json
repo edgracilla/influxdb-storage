@@ -1,14 +1,9 @@
-/* The config.json file is where you specify additional configuration needed by
- * your plugin. The details you specify here will be translated to a form on the
- * UI. The values supplied by the users will then get injected as options on the
- * platform on ready event.
- */
 {
   "host": {
 	"label": "Host",
 	"type": "String",
 	"required": true,
-	"help": "Host(s) for the InfluxDB database."
+	"help": "Host for the InfluxDB database."
   },
   "port": {
 	"label": "Port",
@@ -16,38 +11,42 @@
 	"required": false,
 	"help": "(Optional) Port for the InfluxDB database."
   },
-  "connection_type": {
-	"label": "Connection Type",
+  "protocol": {
+	"label": "Protocol",
 	"type": "String",
-	"required": true,
-	"enum" : ["http", "https"],
-	"help": "Type of URL Connection to be used."
+	"required": false,
+	"enum": [
+	  "http",
+	  "https"
+	],
+	"help": "(Optional) Protocol to be used for the InfluxDB database connection. Default: http",
+	"default": "http"
   },
-  "user" : {
-	"label": "User",
+  "username": {
+	"label": "Username",
 	"type": "String",
-	"required": true,
-	"help": "User for authentication."
+	"required": false,
+	"help": "(Optional) Username to be used for the InfluxDB database authentication."
   },
-  "password" : {
+  "password": {
 	"label": "Password",
 	"type": "Password",
 	"required": false,
-	"help": "(Optional) Password for authentication."
+	"help": "(Optional) Password to be used for the InfluxDB database authentication."
   },
-  "database" : {
+  "database": {
 	"label": "Database Name",
 	"type": "String",
 	"required": true,
 	"help": "Database Name where the Series is located."
   },
-  "series" : {
+  "series": {
 	"label": "Series Name",
 	"type": "String",
 	"required": true,
 	"help": "Series Name where the data will be saved."
   },
-  "tagKeys": {
+  "tag_keys": {
 	"label": "Tag Keys",
 	"type": "String",
 	"required": false,
