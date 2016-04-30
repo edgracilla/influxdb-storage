@@ -1,46 +1,54 @@
 'use strict';
 
-var platform = require('./platform'),
+var async         = require('async'),
+	isArray       = require('lodash.isarray'),
+	platform      = require('./platform'),
 	isPlainObject = require('lodash.isplainobject'),
-	isArray = require('lodash.isarray'),
-	async = require('async'),
-	opt, client;
+	opt           = {}, client;
 
-let sendData = (data) => {
-	var tags = {};
+let sendData = function (data, callback) {
+	let tags = {};
 
-	if (opt.tagKeys){
-		var tagList = opt.tagKeys.split(',');
+	let writePoint = function () {
+		if (!data.time) data.time = Date.now();
 
-		for (var i = 0; tagList.length > i; i++) {
-			if (data[tagList[i]]) {
-				tags[tagList[i]] = data[tagList[i]];
-				delete data[tagList[i]];
+		client.writePoint(opt.series, data, tags, [], (writeError) => {
+			if (!writeError) {
+				platform.log(JSON.stringify({
+					title: 'Record Successfully inserted to InfluxDB.',
+					data: data
+				}));
 			}
 
-		}
-	}
+			callback(writeError);
+		});
+	};
 
-	client.writePoint(opt.series, data, tags, [], function(err) {
-		if (err) {
-			console.error('Error inserting record on InfluxDB.', err);
-			platform.handleException(err);
-		} else {
-			platform.log(JSON.stringify({
-				title: 'Record Successfully inserted to InfluxDB.',
-				data: data
-			}));
-		}
-	});
+	if (opt.tag_keys) {
+		async.each(opt.tag_keys, (tag, done) => {
+			if (data[tag]) {
+				tags[tag] = data[tag];
+				delete data[tag];
+			}
+
+			done();
+		}, writePoint);
+	}
+	else
+		writePoint();
 };
 
 platform.on('data', function (data) {
-	if(isPlainObject(data)){
-		sendData(data);
+	if (isPlainObject(data)) {
+		sendData(data, (error) => {
+			if (error) platform.handleException(error);
+		});
 	}
-	else if(isArray(data)){
-		async.each(data, function(datum){
-			sendData(datum);
+	else if (isArray(data)) {
+		async.each(data, (datum, done) => {
+			sendData(datum, done);
+		}, (error) => {
+			if (error) platform.handleException(error);
 		});
 	}
 	else
@@ -51,20 +59,7 @@ platform.on('data', function (data) {
  * Emitted when the platform shuts down the plugin. The Storage should perform cleanup of the resources on this event.
  */
 platform.once('close', function () {
-	let d = require('domain').create();
-
-	d.once('error', function (error) {
-		console.error(error);
-		platform.handleException(error);
-		platform.notifyClose();
-		d.exit();
-	});
-
-	d.run(function () {
-		// TODO: Release all resources and close connections etc.
-		platform.notifyClose(); // Notify the platform that resources have been released.
-		d.exit();
-	});
+	platform.notifyClose();
 });
 
 /**
@@ -73,19 +68,19 @@ platform.once('close', function () {
  * @param {object} options The options or configuration injected by the platform to the plugin.
  */
 platform.once('ready', function (options) {
-
 	var influx = require('influx');
 
 	client = influx({
-		host : options.host,
-		port : options.port, // optional, default 8086
-		protocol : options.connection_type, // optional, default 'http'
-		username : options.user,
-		password : options.password,
-		database : options.database
+		host: options.host,
+		port: options.port || 8086,
+		protocol: options.protocol || 'http',
+		username: options.username,
+		password: options.password,
+		database: options.database
 	});
 
-	// TODO: Initialize the connection to your database here.
+	opt.tag_keys = `${options.tag_keys}`.replace(/\s/g, '').split(',');
+
 	opt = options;
 	platform.notifyReady();
 	platform.log('InfluxDB has been initialized.');
