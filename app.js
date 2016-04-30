@@ -4,8 +4,7 @@ var async         = require('async'),
 	isArray       = require('lodash.isarray'),
 	platform      = require('./platform'),
 	isPlainObject = require('lodash.isplainobject'),
-	opt           = {},
-	client;
+	opt           = {}, client;
 
 let sendData = function (data, callback) {
 	let tags = {};
@@ -73,7 +72,7 @@ platform.once('ready', function (options) {
 
 	client = influx({
 		host: options.host,
-		port: options.port,
+		port: options.port || 8086,
 		protocol: options.protocol || 'http',
 		username: options.username,
 		password: options.password,
@@ -82,7 +81,6 @@ platform.once('ready', function (options) {
 
 	opt.tag_keys = `${options.tag_keys}`.replace(/\s/g, '').split(',');
 
-	// TODO: Initialize the connection to your database here.
 	opt = options;
 	platform.notifyReady();
 	platform.log('InfluxDB has been initialized.');

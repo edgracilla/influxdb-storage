@@ -1,7 +1,7 @@
 {
   "name": "influxdb-storage",
   "description": "InfluxDB storage plugin for Reekoh IoT Platform",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Reekoh, Inc.",
   "main": "app.js",
   "scripts": {

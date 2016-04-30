@@ -1,7 +1,3 @@
-/*
- * Just a sample code to test the storage plugin.
- * Kindly write your own unit tests for your own plugin.
- */
 'use strict';
 
 

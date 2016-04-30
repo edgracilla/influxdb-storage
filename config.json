@@ -9,7 +9,7 @@
 	"label": "Port",
 	"type": "Number",
 	"required": false,
-	"help": "(Optional) Port for the InfluxDB database."
+	"help": "(Optional) Port for the InfluxDB database. Default: 8086"
   },
   "protocol": {
 	"label": "Protocol",
@@ -19,8 +19,7 @@
 	  "http",
 	  "https"
 	],
-	"help": "(Optional) Protocol to be used for the InfluxDB database connection. Default: http",
-	"default": "http"
+	"help": "(Optional) Protocol to be used for the InfluxDB database connection. Default: http"
   },
   "username": {
 	"label": "Username",
