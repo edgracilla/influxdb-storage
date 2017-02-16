@@ -1,8 +1,9 @@
 {
   "name": "influxdb-storage",
+  "version": "1.1.0",
   "description": "InfluxDB storage plugin for Reekoh IoT Platform",
-  "version": "1.0.1",
   "author": "Reekoh, Inc.",
+  "license": "GPL-3.0",
   "main": "app.js",
   "scripts": {
     "test": "gulp test"
@@ -14,19 +15,21 @@
   "dependencies": {
     "async": "^1.5.2",
     "influx": "^4.1.0",
-    "lodash.isarray": "^4.0.0",
-    "lodash.isplainobject": "^4.0.4"
+    "lodash.isplainobject": "^4.0.4",
+    "moment": "^2.17.1",
+    "reekoh": "^1.0.0",
+    "validate.js": "^0.11.1"
   },
   "devDependencies": {
+    "amqplib": "^0.5.1",
     "gulp": "^3.9.1",
     "gulp-cli": "^1.2.1",
-    "gulp-jshint": "^2.0.0",
+    "gulp-jshint": "^2.0.1",
     "gulp-json-lint": "^0.1.0",
     "gulp-mocha": "^2.2.0",
     "gulp-plumber": "^1.1.0",
-    "mocha": "^2.4.5",
-    "moment": "^2.13.0",
-    "should": "^8.3.1"
-  },
-  "license": "LGPL-3.0"
+    "jshint": "^2.9.4",
+    "mocha": "^2.5.3",
+    "should": "^9.0.2"
+  }
 }

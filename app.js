@@ -1,87 +1,85 @@
-'use strict';
+'use strict'
 
-var async         = require('async'),
-	isArray       = require('lodash.isarray'),
-	platform      = require('./platform'),
-	isPlainObject = require('lodash.isplainobject'),
-	opt           = {}, client;
+const influx = require('influx')
+const reekoh = require('reekoh')
+const config = require('./config.js')
+const _plugin = new reekoh.plugins.Storage()
 
-let sendData = function (data, callback) {
-	let tags = {};
+const async = require('async')
+const isPlainObject = require('lodash.isplainobject')
 
-	let writePoint = function () {
-		if (!data.time) data.time = Date.now();
+let opt = {}
+let client = null
 
-		client.writePoint(opt.series, data, tags, [], (writeError) => {
-			if (!writeError) {
-				platform.log(JSON.stringify({
-					title: 'Record Successfully inserted to InfluxDB.',
-					data: data
-				}));
-			}
+let sendData = (data, callback) => {
+  let tags = {}
 
-			callback(writeError);
-		});
-	};
+  let writePoint = () => {
+    if (!data.time) data.time = Date.now()
 
-	if (opt.tag_keys) {
-		async.each(opt.tag_keys, (tag, done) => {
-			if (data[tag]) {
-				tags[tag] = data[tag];
-				delete data[tag];
-			}
+    client.writePoint(opt.series, data, tags, [], (writeError) => {
+      if (!writeError) {
+        _plugin.log(JSON.stringify({
+          title: 'Record Successfully inserted to InfluxDB.',
+          data: data
+        }))
+      }
 
-			done();
-		}, writePoint);
-	}
-	else
-		writePoint();
-};
+      callback(writeError)
+    })
+  }
 
-platform.on('data', function (data) {
-	if (isPlainObject(data)) {
-		sendData(data, (error) => {
-			if (error) platform.handleException(error);
-		});
-	}
-	else if (isArray(data)) {
-		async.each(data, (datum, done) => {
-			sendData(datum, done);
-		}, (error) => {
-			if (error) platform.handleException(error);
-		});
-	}
-	else
-		platform.handleException(new Error(`Invalid data received. Data must be a valid Array/JSON Object or a collection of objects. Data: ${data}`));
-});
+  if (opt.tag_keys) {
+    async.each(opt.tag_keys, (tag, done) => {
+      if (data[tag]) {
+        tags[tag] = data[tag]
+        delete data[tag]
+      }
 
-/**
- * Emitted when the platform shuts down the plugin. The Storage should perform cleanup of the resources on this event.
- */
-platform.once('close', function () {
-	platform.notifyClose();
-});
+      done()
+    }, writePoint)
+  } else {
+    writePoint()
+  }
+}
 
-/**
- * Emitted when the platform bootstraps the plugin. The plugin should listen once and execute its init process.
- * Afterwards, platform.notifyReady() should be called to notify the platform that the init process is done.
- * @param {object} options The options or configuration injected by the platform to the plugin.
- */
-platform.once('ready', function (options) {
-	var influx = require('influx');
+_plugin.on('data', (data) => {
+  if (isPlainObject(data)) {
+    sendData(data, (error) => {
+      if (error) {
+        _plugin.logException(error)
+      }
 
-	client = influx({
-		host: options.host,
-		port: options.port || 8086,
-		protocol: options.protocol || 'http',
-		username: options.username,
-		password: options.password,
-		database: options.database
-	});
+      process.send({ type: 'processed' })
+    })
+  } else if (Array.isArray(data)) {
+    async.each(data, (datum, done) => {
+      sendData(datum, done)
+    }, (error) => {
+      if (error) _plugin.logException(error)
+    })
+  } else {
+    _plugin.logException(new Error(`Invalid data received. Data must be a valid Array/JSON Object or a collection of objects. Data: ${data}`))
+  }
+})
 
-	opt.tag_keys = `${options.tag_keys}`.replace(/\s/g, '').split(',');
+_plugin.once('ready', () => {
+  let err = config.validate(_plugin.config)
+  if (err) return console.error('Config Validation Error: \n', err)
 
-	opt = options;
-	platform.notifyReady();
-	platform.log('InfluxDB has been initialized.');
-});
+  opt = _plugin.config
+
+  client = influx({
+    host: opt.host,
+    port: opt.port || 8086,
+    protocol: opt.protocol || 'http',
+    username: opt.username,
+    password: opt.password,
+    database: opt.database
+  })
+
+  opt.tag_keys = `${opt.tag_keys}`.replace(/\s/g, '').split(',')
+
+  _plugin.log('InfluxDB has been initialized.')
+  process.send({ type: 'ready' })
+})

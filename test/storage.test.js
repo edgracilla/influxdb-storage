@@ -1,126 +1,128 @@
-'use strict';
+/* global describe, it, before, after */
+'use strict'
 
+const cp = require('child_process')
+const should = require('should')
+const moment = require('moment')
+const amqp = require('amqplib')
 
-var cp     = require('child_process'),
-	assert = require('assert'),
-	should = require('should'),
-	moment = require('moment'),
-	storage;
+let _storage = null
+let _channel = null
+let _conn = {}
 
+let conf = {
+  host: 'localhost',
+  port: 8086,
+  user: 'root',
+  password: 'supersecret',
+  connection_type: 'http',
+  database: 'reekoh_db',
+  series: 'reekoh_series',
+  tagKeys: ''
+}
 
-var HOST            = 'eightyeight-hoverboard-95.c.influxdb.com',
-	USER            = 'influxdb',
-	PASSWORD        = '951fa528144694ba',
-	PORT            = 8086,
-	CONNECTION_TYPE = 'https',
-	DATABASE        = 'reekoh_db',
-	SERIES          = 'reekoh_series',
-	TAG_KEYS        = '',
-	ID              = new Date().getTime();
+const ID = new Date().getTime()
 
-
-var record = {
-	id: ID,
-	co2: '11%',
-	temp: 23,
-	quality: ID,
-	reading_time: '2015-11-27T11:04:13.539Z',
-	random_data: 'abcdefg',
-	is_normal: 'true'
-};
-
+let record = {
+  id: ID,
+  co2: '11%',
+  temp: 23,
+  quality: ID,
+  reading_time: '2015-11-27T11:04:13.539Z',
+  random_data: 'abcdefg',
+  is_normal: 'true'
+}
 
 describe('Storage', function () {
-	this.slow(5000);
+  this.slow(5000)
 
-	after('terminate child process', function (done) {
-		this.timeout(5000);
+  before('init', () => {
+    process.env.INPUT_PIPE = 'demo.pipe.storage'
+    process.env.BROKER = 'amqp://guest:guest@127.0.0.1/'
+    process.env.CONFIG = JSON.stringify(conf)
 
-		storage.send({
-			type: 'close'
-		});
+    amqp.connect(process.env.BROKER).then((conn) => {
+      _conn = conn
+      return conn.createChannel()
+    }).then((channel) => {
+      _channel = channel
+    }).catch((err) => {
+      console.log(err)
+    })
+  })
 
-		setTimeout(function () {
-			storage.kill('SIGKILL');
-			done();
-		}, 3000);
-	});
+  after('terminate child process', function (done) {
+    this.timeout(5000)
 
-	describe('#spawn', function () {
-		it('should spawn a child process', function () {
-			assert.ok(storage = cp.fork(process.cwd()), 'Child process not spawned.');
-		});
-	});
+    _storage.send({
+      type: 'close'
+    })
 
-	describe('#handShake', function () {
-		it('should notify the parent process when ready within 5 seconds', function (done) {
-			this.timeout(5000);
+    setTimeout(function () {
+      _storage.kill('SIGKILL')
+      done()
+    }, 3000)
+  })
 
-			storage.on('message', function (message) {
-				if (message.type === 'ready')
-					done();
-			});
+  describe('#spawn', function () {
+    it('should spawn a child process', function () {
+      should.ok(_storage = cp.fork(process.cwd()), 'Child process not spawned.')
+    })
+  })
 
-			storage.send({
-				type: 'ready',
-				data: {
-					options: {
-						host: HOST,
-						port: PORT,
-						user: USER,
-						password: PASSWORD,
-						connection_type: CONNECTION_TYPE,
-						database: DATABASE,
-						series: SERIES,
-						tagKeys: TAG_KEYS
-					}
-				}
-			}, function (error) {
-				assert.ifError(error);
-			});
-		});
-	});
+  describe('#handShake', function () {
+    it('should notify the parent process when ready within 5 seconds', function (done) {
+      this.timeout(5000)
 
-	describe('#data', function () {
-		it('should process the data', function (done) {
-			storage.send({
-				type: 'data',
-				data: record
-			}, done);
-		});
-	});
+      _storage.on('message', function (message) {
+        if (message.type === 'ready') {
+          done()
+        }
+      })
+    })
+  })
 
-	describe('#data', function () {
-		it('should have inserted the data', function (done) {
-			this.timeout(20000);
+  describe('#data', function () {
+    it('should process the data', function (done) {
+      this.timeout(8000)
 
-			var influx = require('influx');
+      _channel.sendToQueue(process.env.INPUT_PIPE, new Buffer(JSON.stringify(record)))
 
-			var client = influx({
-				host: HOST,
-				port: PORT, // optional, default 8086
-				protocol: CONNECTION_TYPE, // optional, default 'http'
-				username: USER,
-				password: PASSWORD,
-				database: DATABASE
-			});
+      _storage.on('message', (msg) => {
+        if (msg.type === 'processed') done()
+      })
+    })
+  })
 
-			var query = 'SELECT * FROM "reekoh_series" WHERE id = ' + ID;
-			client.queryRaw(query, function (err, results) {
+  describe('#data', function () {
+    it('should have inserted the data', function (done) {
+      this.timeout(20000)
 
-				should.equal(record.co2, results[0].series[0].values[0][1], 'Data validation failed. Field: co2');
-				should.equal(record.is_normal, results[0].series[0].values[0][3], 'Data validation failed. Field: is_normal');
-				should.equal(record.quality, results[0].series[0].values[0][4], 'Data validation failed. Field: quality');
-				should.equal(record.random_data, results[0].series[0].values[0][5], 'Data validation failed. Field: random_data');
-				should.equal(moment(record.reading_time).format('YYYY-MM-DDTHH:mm:ss.SSSSZ'),
-					moment(results[0].series[0].values[0][6]).format('YYYY-MM-DDTHH:mm:ss.SSSSZ'), 'Data validation failed. Field: reading_time');
-				should.equal(record.temp, results[0].series[0].values[0][7], 'Data validation failed. Field: temp');
+      let influx = require('influx')
 
-				done();
-			});
+      let client = influx({
+        host: conf.host,
+        port: conf.port, // optional, default 8086
+        protocol: conf.connection_type, // optional, default 'http'
+        username: conf.user,
+        password: conf.password,
+        database: conf.database
+      })
 
+      let query = 'SELECT * FROM "reekoh_series" WHERE id = ' + ID
 
-		});
-	});
+      client.queryRaw(query, function (err, results) {
+        if (err) return console.log(err)
 
-});
+        should.equal(record.co2, results[0].series[0].values[0][1], 'Data validation failed. Field: co2')
+        should.equal(record.is_normal, results[0].series[0].values[0][3], 'Data validation failed. Field: is_normal')
+        should.equal(record.quality, results[0].series[0].values[0][4], 'Data validation failed. Field: quality')
+        should.equal(record.random_data, results[0].series[0].values[0][5], 'Data validation failed. Field: random_data')
+        should.equal(moment(record.reading_time).format('YYYY-MM-DDTHH:mm:ss.SSSSZ'), moment(results[0].series[0].values[0][6]).format('YYYY-MM-DDTHH:mm:ss.SSSSZ'), 'Data validation failed. Field: reading_time')
+        should.equal(record.temp, results[0].series[0].values[0][7], 'Data validation failed. Field: temp')
+
+        done()
+      })
+    })
+  })
+})
