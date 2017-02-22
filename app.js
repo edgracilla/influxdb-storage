@@ -2,13 +2,12 @@
 
 const influx = require('influx')
 const reekoh = require('reekoh')
-const config = require('./config.js')
 const _plugin = new reekoh.plugins.Storage()
 
 const async = require('async')
 const isPlainObject = require('lodash.isplainobject')
 
-let opt = {}
+let opt = null
 let client = null
 
 let sendData = (data, callback) => {
@@ -29,8 +28,8 @@ let sendData = (data, callback) => {
     })
   }
 
-  if (opt.tag_keys) {
-    async.each(opt.tag_keys, (tag, done) => {
+  if (opt.tagKeys) {
+    async.each(opt.tagKeys, (tag, done) => {
       if (data[tag]) {
         tags[tag] = data[tag]
         delete data[tag]
@@ -46,10 +45,7 @@ let sendData = (data, callback) => {
 _plugin.on('data', (data) => {
   if (isPlainObject(data)) {
     sendData(data, (error) => {
-      if (error) {
-        _plugin.logException(error)
-      }
-
+      if (error) return _plugin.logException(error)
       process.send({ type: 'processed' })
     })
   } else if (Array.isArray(data)) {
@@ -64,9 +60,6 @@ _plugin.on('data', (data) => {
 })
 
 _plugin.once('ready', () => {
-  let err = config.validate(_plugin.config)
-  if (err) return console.error('Config Validation Error: \n', err)
-
   opt = _plugin.config
 
   client = influx({
@@ -78,7 +71,7 @@ _plugin.once('ready', () => {
     database: opt.database
   })
 
-  opt.tag_keys = `${opt.tag_keys}`.replace(/\s/g, '').split(',')
+  opt.tagKeys = `${opt.tagKeys}`.replace(/\s/g, '').split(',')
 
   _plugin.log('InfluxDB has been initialized.')
   process.send({ type: 'ready' })

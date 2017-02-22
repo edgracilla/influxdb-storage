@@ -45,7 +45,7 @@
 	"required": true,
 	"help": "Series Name where the data will be saved."
   },
-  "tag_keys": {
+  "tagKeys": {
 	"label": "Tag Keys",
 	"type": "String",
 	"required": false,
