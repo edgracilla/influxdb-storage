@@ -2,7 +2,7 @@
 
 const influx = require('influx')
 const reekoh = require('reekoh')
-const _plugin = new reekoh.plugins.Storage()
+const plugin = new reekoh.plugins.Storage()
 
 const async = require('async')
 const isPlainObject = require('lodash.isplainobject')
@@ -18,7 +18,7 @@ let sendData = (data, callback) => {
 
     client.writePoint(opt.series, data, tags, [], (writeError) => {
       if (!writeError) {
-        _plugin.log(JSON.stringify({
+        plugin.log(JSON.stringify({
           title: 'Record Successfully inserted to InfluxDB.',
           data: data
         }))
@@ -42,25 +42,25 @@ let sendData = (data, callback) => {
   }
 }
 
-_plugin.on('data', (data) => {
+plugin.on('data', (data) => {
   if (isPlainObject(data)) {
     sendData(data, (error) => {
-      if (error) return _plugin.logException(error)
-      process.send({ type: 'processed' })
+      if (error) return plugin.logException(error)
+      plugin.emit('processed')
     })
   } else if (Array.isArray(data)) {
     async.each(data, (datum, done) => {
       sendData(datum, done)
     }, (error) => {
-      if (error) _plugin.logException(error)
+      if (error) plugin.logException(error)
     })
   } else {
-    _plugin.logException(new Error(`Invalid data received. Data must be a valid Array/JSON Object or a collection of objects. Data: ${data}`))
+    plugin.logException(new Error(`Invalid data received. Data must be a valid Array/JSON Object or a collection of objects. Data: ${data}`))
   }
 })
 
-_plugin.once('ready', () => {
-  opt = _plugin.config
+plugin.once('ready', () => {
+  opt = plugin.config
 
   client = influx({
     host: opt.host,
@@ -73,6 +73,8 @@ _plugin.once('ready', () => {
 
   opt.tagKeys = `${opt.tagKeys}`.replace(/\s/g, '').split(',')
 
-  _plugin.log('InfluxDB has been initialized.')
-  process.send({ type: 'ready' })
+  plugin.log('InfluxDB has been initialized.')
+  plugin.emit('init')
 })
+
+module.exports = plugin

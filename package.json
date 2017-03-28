@@ -13,23 +13,23 @@
     "url": "https://github.com/Reekoh/influxdb-storage"
   },
   "dependencies": {
-    "async": "^1.5.2",
-    "influx": "^4.1.0",
-    "lodash.isplainobject": "^4.0.4",
-    "moment": "^2.17.1",
-    "reekoh": "^1.0.0"
+    "async": "=1.5.2",
+    "influx": "=4.1.0",
+    "lodash.isplainobject": "=4.0.4",
+    "moment": "=2.17.1",
+    "reekoh": "=1.0.2"
   },
   "devDependencies": {
-    "amqplib": "^0.5.1",
-    "gulp": "^3.9.1",
-    "gulp-cli": "^1.2.1",
-    "gulp-jshint": "^2.0.1",
-    "gulp-json-lint": "^0.1.0",
-    "gulp-mocha": "^2.2.0",
-    "gulp-plumber": "^1.1.0",
-    "gulp-standard": "^8.0.4",
-    "jshint": "^2.9.4",
-    "mocha": "^2.5.3",
-    "should": "^9.0.2"
+    "amqplib": "=0.5.1",
+    "gulp": "=3.9.1",
+    "gulp-cli": "=1.2.1",
+    "gulp-jshint": "=2.0.1",
+    "gulp-json-lint": "=0.1.0",
+    "gulp-mocha": "=2.2.0",
+    "gulp-plumber": "=1.1.0",
+    "gulp-standard": "=8.0.4",
+    "jshint": "=2.9.4",
+    "mocha": "=2.5.3",
+    "should": "=9.0.2"
   }
 }
